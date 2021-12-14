@@ -21,7 +21,11 @@ from fels.utils import (
     sort_url_list, download_metadata_file, ensure_sqlite_csv_conn)
 
 
-SENTINEL2_METADATA_URL = 'http://storage.googleapis.com/gcp-public-data-sentinel-2/index.csv.gz'
+
+# SENTINEL2_METADATA_URL = 'http://storage.googleapis.com/gcp-public-data-sentinel-2/index.csv.gz'
+## Level 2 Processings
+SENTINEL2_METADATA_URL = 'http://storage.googleapis.com/gcp-public-data-sentinel-2/L2/index.csv.gz'
+
 
 
 def ensure_sentinel2_metadata(outputdir=None):
@@ -152,11 +156,13 @@ def _ensure_sentinel2_sqlite_conn(collection_file):
     return conn
 
 
-def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspire=False, reject_old=False):
+def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspire=False, reject_old=False, bands=None):
     """
     Collect the entire dir structure of the image files from the
     manifest.safe file and build the same structure in the output
     location.
+
+    bands: the bands we want to download
 
     Returns:
         True if image was downloaded
@@ -187,26 +193,35 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspir
             shutil.copyfileobj(content, f)
         with open(target_manifest, 'r') as manifest_file:
             manifest_lines = manifest_file.read().split()
+
+        """
+        finding all links in the MANIFEST
+        """
         for line in manifest_lines:
             if 'href' in line:
                 rel_path = line[line.find('href=".') + 7:]
                 rel_path = rel_path[:rel_path.find('"')]
                 abs_path = os.path.join(target_path, *rel_path.split('/')[1:])
+
                 if not os.path.exists(os.path.dirname(abs_path)):
                     os.makedirs(os.path.dirname(abs_path))
+
                 try:
                     ubelt.download(url + rel_path, fpath=abs_path)
                 except HTTPError as error:
                     print('Error downloading {} [{}]'.format(url + rel_path, error))
                     continue
-        granule = os.path.dirname(os.path.dirname(get_S2_image_bands(target_path, 'B01')))
-        for extra_dir in ('AUX_DATA', 'HTML'):
-            if not os.path.exists(os.path.join(target_path, extra_dir)):
-                os.makedirs(os.path.join(target_path, extra_dir))
-            if not os.path.exists(os.path.join(granule, extra_dir)):
-                os.makedirs(os.path.join(granule, extra_dir))
-        if not manifest_lines:
-            print()
+
+        ## FIXME this assumes a different directory structure
+        # granule = os.path.dirname(os.path.dirname(get_S2_image_bands(target_path, 'B01')))
+        #
+        # for extra_dir in ('AUX_DATA', 'HTML'):
+        #     if not os.path.exists(os.path.join(target_path, extra_dir)):
+        #         os.makedirs(os.path.join(target_path, extra_dir))
+        #     if not os.path.exists(os.path.join(granule, extra_dir)):
+        #         os.makedirs(os.path.join(granule, extra_dir))
+        # if not manifest_lines:
+        #     print()
     elif reject_old and not is_new(target_manifest):
         print(f'Warning: old-format image {outputdir} exists')
         return_status = False
