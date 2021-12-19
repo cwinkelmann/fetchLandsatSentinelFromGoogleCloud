@@ -147,13 +147,24 @@ def ensure_sqlite_csv_conn(collection_file, fields, table_create_cmd,
                     position=0, leave=True,
                 )
                 # Note: Manual iteration is 1.5x faster than DictReader
+                n = 0
+                batch_vals = []
                 for line in prog:
                     cols = line[:-1].split(',')
                     # Select the values to insert into the SQLite database
                     vals = [cols[idx] for idx in col_indexes]
-                    cur.execute(insert_statement, vals)
+                    # cur.execute(insert_statement, vals)
+                    batch_vals.append(vals)
+                    n += 1
+                    if n == 50000:
+                        cur.executemany(insert_statement, batch_vals)
+                        conn.commit()
+                        batch_vals = []
+                        n = 0
 
-            conn.commit()
+                cur.executemany(insert_statement, batch_vals)
+                conn.commit()
+
         except Exception:
             raise
         else:

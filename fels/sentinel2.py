@@ -150,9 +150,11 @@ def _ensure_sentinel2_sqlite_conn(collection_file):
             CLOUD_COVER REAL NOT NULL
         );
         ''')
+
     conn = ensure_sqlite_csv_conn(
         collection_file, fields, table_create_cmd, tablename,
         index_cols=index_cols, overwrite=False)
+
     return conn
 
 
