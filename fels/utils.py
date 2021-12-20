@@ -42,7 +42,7 @@ def download_metadata_file(url, outputdir, program):
         from pyspark.sql import SparkSession
         import multiprocessing
 
-        cpu_count = 4 # multiprocessing.cpu_count()
+        cpu_count = 6 # multiprocessing.cpu_count()
         print(cpu_count)
         spark = SparkSession.builder \
           .master(f"local[{cpu_count}]") \
@@ -77,7 +77,7 @@ def download_metadata_file(url, outputdir, program):
 
         df = spark.read.format("csv").option("header", True).schema(schema).load(zipped_index_path)
             # csv(zipped_index_path, header = True)
-        df.repartitionByRange(20, ["MGRS_TILE"]).write.mode('overwrite').parquet(index_path)
+        df.repartitionByRange(5, ["MGRS_TILE"]).write.mode('overwrite').parquet(index_path)
     return index_path
 
 
