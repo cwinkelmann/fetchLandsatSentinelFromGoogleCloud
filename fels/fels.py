@@ -77,7 +77,8 @@ def convert_wkt_to_scene(sat, geometry, include_overlap, thresh=0.0):
     else:
         raise TypeError(type(geometry))
 
-    gdf = _memo_geopandas_read(path)
+    # gdf = _memo_geopandas_read(path)
+    gdf = geopandas.read_file(path) # read the shapefile of Satellite data tiles
 
     if include_overlap:
         if thresh > 0:
@@ -89,7 +90,7 @@ def convert_wkt_to_scene(sat, geometry, include_overlap, thresh=0.0):
             found = gdf[gdf.geometry.intersects(feat)]
     else:
         # This is the bottleneck when the downloaded data exists
-        found = gdf[gdf.geometry.contains(feat)]
+        found = gdf[gdf.geometry.contains(feat)] ## FIXME this returns nothing in many cases
 
     if sat == 'S2':
         return found.Name.values.tolist()
@@ -295,7 +296,7 @@ def _run_fels(options):
     # Run functions
     result = []
     for scene in scenes:
-
+        ## FIXME why can't I get all tiles at once?
         if options.sat == 'S2':
             sentinel2_metadata_file = ensure_sentinel2_metadata(
                 options.outputcatalogs)

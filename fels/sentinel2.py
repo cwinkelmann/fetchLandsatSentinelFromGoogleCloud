@@ -19,7 +19,7 @@ except ImportError:
 
 from fels.utils import (
     sort_url_list, download_metadata_file, ensure_sqlite_csv_conn)
-
+from pyspark.sql import SparkSession
 
 
 # SENTINEL2_METADATA_URL = 'http://storage.googleapis.com/gcp-public-data-sentinel-2/index.csv.gz'
@@ -30,6 +30,8 @@ SENTINEL2_METADATA_URL = 'http://storage.googleapis.com/gcp-public-data-sentinel
 
 def ensure_sentinel2_metadata(outputdir=None):
     return download_metadata_file(SENTINEL2_METADATA_URL, outputdir, 'Sentinel')
+
+
 
 
 def query_sentinel2_catalogue(collection_file, cc_limit, date_start, date_end, tile, latest=False, use_csv=False):
@@ -74,9 +76,12 @@ def query_sentinel2_catalogue(collection_file, cc_limit, date_start, date_end, t
                                          date_end, tile, latest=latest)
     else:
         # Generally SQL is faster
-        return _query_sentinel2_with_sqlite(collection_file, cc_limit,
+        return _query_sentinel2_with_pyspark(collection_file, cc_limit,
                                             date_start, date_end, tile,
                                             latest=latest)
+        # return _query_sentinel2_with_sqlite(collection_file, cc_limit,
+        #                                     date_start, date_end, tile,
+        #                                     latest=latest)
 
 
 def _query_sentinel2_with_csv(collection_file, cc_limit, date_start, date_end,
@@ -157,6 +162,35 @@ def _ensure_sentinel2_sqlite_conn(collection_file):
 
     return conn
 
+
+def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_end, tile, latest):
+    """
+
+
+
+    :param collection_file:
+    :param cc_limit:
+    :param date_start:
+    :param date_end:
+    :param tile:
+    :param latest:
+    :return:
+    """
+    spark = SparkSession.builder \
+        .master("local[4]") \
+        .appName("parquet_example") \
+        .getOrCreate()
+
+    parqDF = spark.read.parquet(collection_file)
+    # print(df.head())
+    parqDF.createOrReplaceTempView("ParquetTable")
+    query = (f"select * from ParquetTable where MGRS_TILE IN ('{tile}') AND SENSING_TIME BETWEEN ({date_start} AND {date_end})")
+    if cc_limit:
+        query += f" AND CLOUD_COVER >= {cc_limit}"
+
+    parkSQL = spark.sql(query)
+
+    return parkSQL.collect()
 
 def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspire=False, reject_old=False, bands=None):
     """

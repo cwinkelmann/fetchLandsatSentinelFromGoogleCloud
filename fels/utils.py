@@ -2,14 +2,18 @@
 from __future__ import absolute_import, division, print_function
 import atexit
 import gzip
+import logging
 import os
 import shutil
 import sqlite3
+from pathlib import Path
+
 import ubelt
 
 
 # Set the default output dir to the XDG or System cache dir
 # i.e. ~/.cache/fels $XDG_DATA_HOME/fels %APPDATA%/fels or ~/Library/Caches/fels
+
 FELS_DEFAULT_OUTPUTDIR = os.environ.get('FELS_DEFAULT_OUTPUTDIR', '')
 if not FELS_DEFAULT_OUTPUTDIR:
     FELS_DEFAULT_OUTPUTDIR = ubelt.get_app_cache_dir('fels')
@@ -30,10 +34,50 @@ def download_metadata_file(url, outputdir, program):
         print('outputdir = {!r}'.format(outputdir))
         ubelt.download(url, fpath=zipped_index_path, chunksize=int(2 ** 22))
     index_path = os.path.join(outputdir, 'index_' + program + '.csv')
-    if not os.path.isfile(index_path):
-        print('Unzipping Metadata file...')
-        with gzip.open(zipped_index_path) as gzip_index, open(index_path, 'wb') as f:
-            shutil.copyfileobj(gzip_index, f)
+    if not os.path.isfile(Path(index_path).joinpath("_SUCCESS")):
+        # print('Unzipping Metadata file...')
+        # with gzip.open(zipped_index_path) as gzip_index, open(index_path, 'wb') as f:
+        #     shutil.copyfileobj(gzip_index, f)
+
+        from pyspark.sql import SparkSession
+        import multiprocessing
+
+        cpu_count = multiprocessing.cpu_count()
+        print(cpu_count)
+        spark = SparkSession.builder \
+          .master(f"local[{cpu_count}]") \
+          .appName("convert to parquet") \
+          .getOrCreate()
+
+        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType, BooleanType
+
+#         GRANULE_ID = 'L2A_T32UQD_A019510_20190318T102020', \
+#                      PRODUCT_ID = 'S2A_MSIL2A_20190318T102021_N0211_R065_T32UQD_20190318T143832', \
+# DATATAKE_IDENTIFIER = 'GS2A_20190318T102021_019510_N02.11', MGRS_TILE = '32UQD', SENSING_TIME = '2019-03-18T10:26:08.423000Z', \
+#  TOTAL_SIZE = '976842639', CLOUD_COVER = '84.573704', GEOMETRIC_QUALITY_FLAG = None, GENERATION_TIME = '2019-03-18T14:38:32.000000Z', NORTH_LAT = '53.21208275239454', \
+# SOUTH_LAT = '52.175585354190666', WEST_LON = '11.927685128268587', EAST_LON = '13.63403464064338', \
+# BASE_URL = 'gs://gcp-public-data-sentinel-2/L2/tiles/32/U/QD/S2A_MSIL2A_20190318T102021_N0211_R065_T32UQD_20190318T143832.SAFE'
+
+        schema = StructType() \
+            .add("GRANULE_ID", StringType(), True) \
+            .add("PRODUCT_ID", StringType(), True) \
+            .add("DATATAKE_IDENTIFIER", StringType(), True) \
+            .add("MGRS_TILE", StringType(), True) \
+            .add("SENSING_TIME", DateType(), True) \
+            .add("TOTAL_SIZE", IntegerType(), True) \
+            .add("CLOUD_COVER", DoubleType(), True) \
+            .add("GEOMETRIC_QUALITY_FLAG", BooleanType(), True) \
+            .add("GENERATION_TIME", DateType(), True) \
+            .add("NORTH_LAT", DoubleType(), True) \
+            .add("SOUTH_LAT", DoubleType(), True) \
+            .add("WEST_LON", DoubleType(), True) \
+            .add("EAST_LON", DoubleType(), True) \
+            .add("BASE_URL", StringType(), True) \
+
+
+        df = spark.read.format("csv").option("header", True).schema(schema).load(zipped_index_path)
+            # csv(zipped_index_path, header = True)
+        df.repartition(20).write.mode('overwrite').parquet(index_path)
     return index_path
 
 
