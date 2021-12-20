@@ -8,6 +8,8 @@ import numpy as np
 import os
 import shutil
 import sys
+
+import pandas as pd
 import ubelt
 import xml.etree.ElementTree as ET
 from tempfile import NamedTemporaryFile
@@ -184,13 +186,23 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
     parqDF = spark.read.parquet(collection_file)
     # print(df.head())
     parqDF.createOrReplaceTempView("ParquetTable")
-    query = (f"select * from ParquetTable where MGRS_TILE IN ('{tile}') AND SENSING_TIME BETWEEN ({date_start} AND {date_end})")
+    date_start_obj = datetime.datetime.strptime(date_start, '%Y-%m-%d')
+    date_end_obj = datetime.datetime.strptime(date_end, '%Y-%m-%d')
+    query = (f"select * from ParquetTable where MGRS_TILE IN ('{tile}') AND SENSING_TIME >= '{date_start}' AND SENSING_TIME <= '{date_end}'")
     if cc_limit:
         query += f" AND CLOUD_COVER >= {cc_limit}"
 
     parkSQL = spark.sql(query)
+    parkSQL.repartition(1).write.format('com.databricks.spark.csv') \
+        .mode('overwrite').option("header", "true").save('tmp/collected_tiles.csv')
 
-    return parkSQL.collect()
+    csv_files = glob.glob("tmp/collected_tiles.csv/*.csv")
+    tilelist = []
+    for f in csv_files:
+        tilelist.append(pd.read_csv(f))
+
+    return pd.concat(tilelist)
+
 
 def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspire=False, reject_old=False, bands=None):
     """
@@ -206,6 +218,7 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspir
             or if reject_old=True and it is old-format
             or if noinspire=False and INSPIRE file is missing
     """
+    url = 'http://storage.googleapis.com/' + url.replace('gs://', '')
     img = os.path.basename(url)
     target_path = os.path.join(outputdir, img)
     target_manifest = os.path.join(target_path, 'manifest.safe')

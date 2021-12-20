@@ -300,46 +300,49 @@ def _run_fels(options):
         if options.sat == 'S2':
             sentinel2_metadata_file = ensure_sentinel2_metadata(
                 options.outputcatalogs)
-            url = query_sentinel2_catalogue(
+            urls_df = query_sentinel2_catalogue(
                 sentinel2_metadata_file, options.cloudcover,
                 options.start_date, options.end_date, scene, options.latest,
                 use_csv=options.use_csv)
-            if not url:
+
+            if len(urls_df) == 0:
                 print('No image was found with the criteria you chose! Please review your parameters and try again.')
+
             else:
-                print('Found {} files.'.format(len(url)))
+                print('Found {} files.'.format(len(urls_df)))
                 if not options.list:
                     valid_mask = []
-                    for i, u in enumerate(url):
-                        print('Downloading {} of {}...'.format(i + 1, len(url)))
+                    for index, row in urls_df.iterrows():
+                    #for i, u in enumerate(urls_df):
+                        print('Downloading {} of {}...'.format(index + 1, len(urls_df)))
                         ok = get_sentinel2_image(
-                            u, options.output, options.overwrite,
+                            row["BASE_URL"], options.output, options.overwrite,
                             options.excludepartial, options.noinspire,
                             options.reject_old)
                         if not ok:
-                            print(f'Skipped {u}')
+                            print(f'Skipped {row["BASE_URL"]}')
                         valid_mask.append(ok)
-                    url = [u for u, m in zip(url, valid_mask) if m]
+                    urls_df = [u for u, m in zip(urls_df, valid_mask) if m]
         else:
             landsat_metadata_file = ensure_landsat_metadata(
                 options.outputcatalogs)
 
-            url = query_landsat_catalogue(
+            urls_df = query_landsat_catalogue(
                 landsat_metadata_file, options.cloudcover, options.start_date,
                 options.end_date, scene[0:3], scene[3:6], options.sat,
                 options.latest, use_csv=options.use_csv)
 
-            if not url:
+            if not urls_df:
                 print('No image was found with the criteria you chose! Please review your parameters and try again.')
             else:
-                print('Found {} files.'.format(len(url)))
-                for i, u in enumerate(url):
+                print('Found {} files.'.format(len(urls_df)))
+                for i, u in enumerate(urls_df):
                     if not options.list:
-                        print('Downloading {} of {}...'.format(i + 1, len(url)))
+                        print('Downloading {} of {}...'.format(i + 1, len(urls_df)))
                         get_landsat_image(u, options.output, options.overwrite, options.sat)
 
         if options.dates:
-            dirs = [u.split('/')[-1] for u in url]
+            dirs = [u.split('/')[-1] for u in urls_df]
             if options.sat == 'S2':
                 datetimes = [safedir_to_datetime(d) for d in dirs]
                 dates = [dt.dates() for dt in datetimes]
@@ -349,7 +352,7 @@ def _run_fels(options):
             result.extend(dates)
 
         else:
-            result.extend(url)
+            result.extend(urls_df)
 
     return result
 
