@@ -314,11 +314,15 @@ def _run_fels(options):
                     valid_mask = []
                     for index, row in urls_df.iterrows():
                     #for i, u in enumerate(urls_df):
+                        ok = False
                         print('Downloading {} of {}...'.format(index + 1, len(urls_df)))
-                        ok = get_sentinel2_image(
-                            row["BASE_URL"], options.output, options.overwrite,
-                            options.excludepartial, options.noinspire,
-                            options.reject_old)
+                        try:
+                            ok = get_sentinel2_image(
+                                row["BASE_URL"], options.output, options.overwrite,
+                                options.excludepartial, options.noinspire,
+                                options.reject_old)
+                        except Exception as e:
+                            print(e)
                         if not ok:
                             print(f'Skipped {row["BASE_URL"]}')
                         valid_mask.append(ok)

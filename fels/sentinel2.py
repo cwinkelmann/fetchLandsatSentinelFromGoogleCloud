@@ -190,7 +190,7 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
     date_end_obj = datetime.datetime.strptime(date_end, '%Y-%m-%d')
     query = (f"select * from ParquetTable where MGRS_TILE IN ('{tile}') AND SENSING_TIME >= '{date_start}' AND SENSING_TIME <= '{date_end}'")
     if cc_limit:
-        query += f" AND CLOUD_COVER >= {cc_limit}"
+        query += f" AND CLOUD_COVER <= {cc_limit}"
 
     parkSQL = spark.sql(query)
     parkSQL.repartition(1).write.format('com.databricks.spark.csv') \

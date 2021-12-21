@@ -13,6 +13,7 @@ import ubelt
 
 # Set the default output dir to the XDG or System cache dir
 # i.e. ~/.cache/fels $XDG_DATA_HOME/fels %APPDATA%/fels or ~/Library/Caches/fels
+from pyspark.sql.types import TimestampType
 
 FELS_DEFAULT_OUTPUTDIR = os.environ.get('FELS_DEFAULT_OUTPUTDIR', '')
 if not FELS_DEFAULT_OUTPUTDIR:
@@ -33,14 +34,13 @@ def download_metadata_file(url, outputdir, program):
         print('url = {!r}'.format(url))
         print('outputdir = {!r}'.format(outputdir))
         ubelt.download(url, fpath=zipped_index_path, chunksize=int(2 ** 22))
-    index_path = os.path.join(outputdir, 'index_' + program + '.csv')
+    index_path = os.path.join(outputdir, 'index_' + program + '_parquet')
     if not os.path.isfile(Path(index_path).joinpath("_SUCCESS")):
         # print('Unzipping Metadata file...')
         # with gzip.open(zipped_index_path) as gzip_index, open(index_path, 'wb') as f:
         #     shutil.copyfileobj(gzip_index, f)
 
         from pyspark.sql import SparkSession
-        import multiprocessing
 
         cpu_count = 6 # multiprocessing.cpu_count()
         print(cpu_count)
@@ -63,7 +63,7 @@ def download_metadata_file(url, outputdir, program):
             .add("PRODUCT_ID", StringType(), True) \
             .add("DATATAKE_IDENTIFIER", StringType(), True) \
             .add("MGRS_TILE", StringType(), True) \
-            .add("SENSING_TIME", DateType(), True) \
+            .add("SENSING_TIME", TimestampType(), True) \
             .add("TOTAL_SIZE", IntegerType(), True) \
             .add("CLOUD_COVER", DoubleType(), True) \
             .add("GEOMETRIC_QUALITY_FLAG", BooleanType(), True) \
