@@ -13,7 +13,6 @@ import ubelt
 
 # Set the default output dir to the XDG or System cache dir
 # i.e. ~/.cache/fels $XDG_DATA_HOME/fels %APPDATA%/fels or ~/Library/Caches/fels
-from pyspark.sql.types import TimestampType
 
 FELS_DEFAULT_OUTPUTDIR = os.environ.get('FELS_DEFAULT_OUTPUTDIR', '')
 if not FELS_DEFAULT_OUTPUTDIR:
@@ -42,10 +41,10 @@ def download_metadata_file(url, outputdir, program):
 
         from pyspark.sql import SparkSession
 
-        cpu_count = 6 # multiprocessing.cpu_count()
-        print(cpu_count)
+        paralelism = 6
+        print(paralelism)
         spark = SparkSession.builder \
-          .master(f"local[{cpu_count}]") \
+          .master(f"local[{paralelism}]") \
           .appName("convert to parquet") \
           .getOrCreate()
 

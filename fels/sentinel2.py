@@ -77,13 +77,11 @@ def query_sentinel2_catalogue(collection_file, cc_limit, date_start, date_end, t
         return _query_sentinel2_with_csv(collection_file, cc_limit, date_start,
                                          date_end, tile, latest=latest)
     else:
-        # Generally SQL is faster
+        # Query the index file directly
         return _query_sentinel2_with_pyspark(collection_file, cc_limit,
                                             date_start, date_end, tile,
                                             latest=latest)
-        # return _query_sentinel2_with_sqlite(collection_file, cc_limit,
-        #                                     date_start, date_end, tile,
-        #                                     latest=latest)
+
 
 
 def _query_sentinel2_with_csv(collection_file, cc_limit, date_start, date_end,
