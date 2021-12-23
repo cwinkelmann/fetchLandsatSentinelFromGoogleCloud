@@ -48,7 +48,7 @@ def download_metadata_file(url, outputdir, program):
           .appName("convert to parquet") \
           .getOrCreate()
 
-        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType, BooleanType
+        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType, BooleanType, TimestampType
 
 #         GRANULE_ID = 'L2A_T32UQD_A019510_20190318T102020', \
 #                      PRODUCT_ID = 'S2A_MSIL2A_20190318T102021_N0211_R065_T32UQD_20190318T143832', \
