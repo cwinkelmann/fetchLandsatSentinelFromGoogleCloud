@@ -21,11 +21,21 @@ if not FELS_DEFAULT_OUTPUTDIR:
 GLOBAL_SQLITE_CONNECTIONS = {}
 
 
-def download_metadata_file(url, outputdir, program):
-    """Download and unzip the catalogue files."""
+def download_metadata_file(url, outputdir, program, max_age):
+    """
+
+    :param url:
+    :param outputdir:
+    :param program:
+    :param max_age:
+    :return:
+    """
     if outputdir is None:
         outputdir = FELS_DEFAULT_OUTPUTDIR
     zipped_index_path = os.path.join(outputdir, 'index_' + program + '.csv.gz')
+
+
+
     if not os.path.isfile(zipped_index_path):
         if not os.path.exists(os.path.dirname(zipped_index_path)):
             os.makedirs(os.path.dirname(zipped_index_path))

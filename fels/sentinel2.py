@@ -30,7 +30,13 @@ SENTINEL2_METADATA_URL = 'http://storage.googleapis.com/gcp-public-data-sentinel
 
 
 
-def ensure_sentinel2_metadata(outputdir=None):
+def ensure_sentinel2_metadata(outputdir=None, max_age=None):
+    """
+
+    :param outputdir:
+    :param max_age: maximum age in days
+    :return:
+    """
     return download_metadata_file(SENTINEL2_METADATA_URL, outputdir, 'Sentinel')
 
 
