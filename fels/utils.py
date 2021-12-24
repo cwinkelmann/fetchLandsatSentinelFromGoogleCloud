@@ -21,7 +21,7 @@ if not FELS_DEFAULT_OUTPUTDIR:
 GLOBAL_SQLITE_CONNECTIONS = {}
 
 
-def download_metadata_file(url, outputdir, program, max_age):
+def download_metadata_file(url, outputdir, program, max_age=None):
     """
 
     :param url:
@@ -33,7 +33,7 @@ def download_metadata_file(url, outputdir, program, max_age):
     if outputdir is None:
         outputdir = FELS_DEFAULT_OUTPUTDIR
     zipped_index_path = os.path.join(outputdir, 'index_' + program + '.csv.gz')
-
+    ## TODO delete the file if it is too old
 
 
     if not os.path.isfile(zipped_index_path):

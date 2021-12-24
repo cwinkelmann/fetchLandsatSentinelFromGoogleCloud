@@ -37,7 +37,7 @@ def ensure_sentinel2_metadata(outputdir=None, max_age=None):
     :param max_age: maximum age in days
     :return:
     """
-    return download_metadata_file(SENTINEL2_METADATA_URL, outputdir, 'Sentinel')
+    return download_metadata_file(SENTINEL2_METADATA_URL, outputdir, 'Sentinel', max_age)
 
 
 
