@@ -184,28 +184,28 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
     """
     spark = SparkSession.builder \
         .master("local[4]") \
-        .appName("parquet_example") \
+        .appName(f"tile_{tile}") \
         .getOrCreate()
 
     parqDF = spark.read.parquet(collection_file)
     # print(df.head())
-    parqDF.createOrReplaceTempView("ParquetTable")
+    parqDF.createOrReplaceTempView(f"ParquetTable_{tile}")
     date_start_obj = datetime.datetime.strptime(date_start, '%Y-%m-%d')
     date_end_obj = datetime.datetime.strptime(date_end, '%Y-%m-%d')
-    query = (f"select * from ParquetTable where MGRS_TILE IN ('{tile}') AND SENSING_TIME >= '{date_start}' AND SENSING_TIME <= '{date_end}'")
+    query = (f"select * from ParquetTable_{tile} where MGRS_TILE IN ('{tile}') AND SENSING_TIME >= '{date_start}' AND SENSING_TIME <= '{date_end}'")
     if cc_limit:
         query += f" AND CLOUD_COVER <= {cc_limit}"
 
-    parkSQL = spark.sql(query)
-    parkSQL.repartition(1).write.format('com.databricks.spark.csv') \
-        .mode('overwrite').option("header", "true").save('tmp/collected_tiles.csv')
+    tilelist = spark.sql(query).toPandas()
+    # parkSQL.repartition(1).write.format('com.databricks.spark.csv') \
+    #     .mode('overwrite').option("header", "true").save('tmp/collected_tiles.csv')
+    #
+    # csv_files = glob.glob("tmp/collected_tiles.csv/*.csv")
+    # tilelist = []
+    # for f in csv_files:
+    #     tilelist.append(pd.read_csv(f))
 
-    csv_files = glob.glob("tmp/collected_tiles.csv/*.csv")
-    tilelist = []
-    for f in csv_files:
-        tilelist.append(pd.read_csv(f))
-
-    return pd.concat(tilelist)
+    return tilelist
 
 
 def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspire=False, reject_old=False, bands=None):
