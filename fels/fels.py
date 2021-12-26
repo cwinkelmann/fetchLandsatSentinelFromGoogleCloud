@@ -92,7 +92,7 @@ def convert_wkt_to_scene(sat, geometry, include_overlap, thresh=0.0):
             found = gdf[gdf.geometry.intersects(feat)]
     else:
         # This is the bottleneck when the downloaded data exists
-        found = gdf[gdf.geometry.contains(feat)] ## FIXME this returns nothing in many cases
+        found = gdf[gdf.geometry.contains(feat)]
 
     if sat == 'S2':
         return found.Name.values.tolist()
