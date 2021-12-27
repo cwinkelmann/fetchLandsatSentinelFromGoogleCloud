@@ -9,6 +9,8 @@ import os
 import shutil
 import sys
 
+from bs4 import BeautifulSoup
+
 import pandas as pd
 import ubelt
 import xml.etree.ElementTree as ET
@@ -197,18 +199,12 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
         query += f" AND CLOUD_COVER <= {cc_limit}"
 
     tilelist = spark.sql(query).toPandas()
-    # parkSQL.repartition(1).write.format('com.databricks.spark.csv') \
-    #     .mode('overwrite').option("header", "true").save('tmp/collected_tiles.csv')
-    #
-    # csv_files = glob.glob("tmp/collected_tiles.csv/*.csv")
-    # tilelist = []
-    # for f in csv_files:
-    #     tilelist.append(pd.read_csv(f))
 
     return tilelist
 
 
-def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspire=False, reject_old=False, bands=None):
+def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
+                        noinspire=False, reject_old=False, bands=None):
     """
     Collect the entire dir structure of the image files from the
     manifest.safe file and build the same structure in the output
@@ -246,6 +242,9 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspir
             shutil.copyfileobj(content, f)
         with open(target_manifest, 'r') as manifest_file:
             manifest_lines = manifest_file.read().split()
+
+
+        ## metadata = extract_granule_metadata(manifest_lines, url) ## TODO remove this later
 
         """
         finding all links in the MANIFEST
@@ -296,6 +295,37 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False, noinspir
             return_status = False
 
     return return_status
+
+
+def extract_granule_metadata(manifest_lines, url):
+    """
+    find the extend of the tile
+    :param manifest_lines:
+    :return:
+    """
+    debug_rel_paths = []
+    for line in manifest_lines:
+        if 'href' in line:
+            rel_path = line[line.find('href=".') + 7:]
+            rel_path = rel_path[:rel_path.find('"')]
+            if rel_path.split("/")[-1] == "MTD_TL.xml" and rel_path.split("/")[1] == "GRANULE":
+                ## Parse this file
+
+                granule_metadata = os.path.join("/tmp/MTD_TL.xml")
+
+                ubelt.download(url + rel_path, fpath=granule_metadata)
+                import xml.etree.ElementTree as ET
+                root = ET.parse(granule_metadata).getroot()
+
+
+                # with open(granule_metadata, 'r') as f:
+                #     data = f.read()
+                #     bs_data = BeautifulSoup(data, "xml")
+                #     b_unique = bs_data.find_all('n1:Geometric_Info')
+
+            debug_rel_paths.append(rel_path)
+
+    return debug_rel_paths
 
 
 def get_S2_image_bands(image_path, band):
