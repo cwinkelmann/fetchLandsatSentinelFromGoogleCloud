@@ -87,6 +87,7 @@ def download_metadata_file(url, outputdir, program, max_age=None):
         df = spark.read.format("csv").option("header", True).schema(schema).load(zipped_index_path)
             # csv(zipped_index_path, header = True)
         df.repartitionByRange(5, ["MGRS_TILE"]).write.mode('overwrite').parquet(index_path)
+        spark.stop()
     return index_path
 
 

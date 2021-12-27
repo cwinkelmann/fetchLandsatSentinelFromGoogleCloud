@@ -199,7 +199,7 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
         query += f" AND CLOUD_COVER <= {cc_limit}"
 
     tilelist = spark.sql(query).toPandas()
-
+    spark.stop()
     return tilelist
 
 

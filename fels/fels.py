@@ -328,7 +328,7 @@ def _run_fels(options):
                         if not ok:
                             print(f'Skipped {row["BASE_URL"]}')
                         valid_mask.append(ok)
-                    urls_df = [u for u, m in zip(urls_df, valid_mask) if m]
+                    # urls_df = [u for u, m in zip(urls_df, valid_mask) if m]
         else:
             landsat_metadata_file = ensure_landsat_metadata(
                 options.outputcatalogs)
