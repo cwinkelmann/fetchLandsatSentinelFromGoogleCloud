@@ -190,17 +190,13 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
         .getOrCreate()
 
     parqDF = spark.read.parquet(collection_file)
-    # print(df.head())
     parqDF.createOrReplaceTempView(f"ParquetTable_{tile}")
-    date_start_obj = datetime.datetime.strptime(date_start, '%Y-%m-%d')
-    date_end_obj = datetime.datetime.strptime(date_end, '%Y-%m-%d')
     query = (f"select * from ParquetTable_{tile} where MGRS_TILE IN ('{tile}') AND SENSING_TIME >= '{date_start}' AND SENSING_TIME <= '{date_end}'")
     if cc_limit:
         query += f" AND CLOUD_COVER <= {cc_limit}"
-
-    tilelist = spark.sql(query).toPandas()
+    tilelist_df = spark.sql(query).toPandas()
     spark.stop()
-    return tilelist
+    return tilelist_df
 
 
 def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,

@@ -60,13 +60,6 @@ def download_metadata_file(url, outputdir, program, max_age=None):
 
         from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType, BooleanType, TimestampType
 
-#         GRANULE_ID = 'L2A_T32UQD_A019510_20190318T102020', \
-#                      PRODUCT_ID = 'S2A_MSIL2A_20190318T102021_N0211_R065_T32UQD_20190318T143832', \
-# DATATAKE_IDENTIFIER = 'GS2A_20190318T102021_019510_N02.11', MGRS_TILE = '32UQD', SENSING_TIME = '2019-03-18T10:26:08.423000Z', \
-#  TOTAL_SIZE = '976842639', CLOUD_COVER = '84.573704', GEOMETRIC_QUALITY_FLAG = None, GENERATION_TIME = '2019-03-18T14:38:32.000000Z', NORTH_LAT = '53.21208275239454', \
-# SOUTH_LAT = '52.175585354190666', WEST_LON = '11.927685128268587', EAST_LON = '13.63403464064338', \
-# BASE_URL = 'gs://gcp-public-data-sentinel-2/L2/tiles/32/U/QD/S2A_MSIL2A_20190318T102021_N0211_R065_T32UQD_20190318T143832.SAFE'
-
         schema = StructType() \
             .add("GRANULE_ID", StringType(), True) \
             .add("PRODUCT_ID", StringType(), True) \
