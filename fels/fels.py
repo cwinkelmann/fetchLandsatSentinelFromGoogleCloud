@@ -298,7 +298,7 @@ def _run_fels(options):
     # Run functions
     result = []
     for scene in scenes:
-        ## FIXME why can't I get all tiles at once?
+
         if options.sat == 'S2':
             sentinel2_metadata_file = ensure_sentinel2_metadata(
                 options.outputcatalogs)

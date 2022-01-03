@@ -33,8 +33,6 @@ def download_metadata_file(url, outputdir, program, max_age=None):
     if outputdir is None:
         outputdir = FELS_DEFAULT_OUTPUTDIR
     zipped_index_path = os.path.join(outputdir, 'index_' + program + '.csv.gz')
-    ## TODO delete the file if it is too old
-
 
     if not os.path.isfile(zipped_index_path):
         if not os.path.exists(os.path.dirname(zipped_index_path)):
@@ -43,14 +41,22 @@ def download_metadata_file(url, outputdir, program, max_age=None):
         print('url = {!r}'.format(url))
         print('outputdir = {!r}'.format(outputdir))
         ubelt.download(url, fpath=zipped_index_path, chunksize=int(2 ** 22))
-    index_path = os.path.join(outputdir, 'index_' + program + '_parquet')
-    if not os.path.isfile(Path(index_path).joinpath("_SUCCESS")):
-        # print('Unzipping Metadata file...')
-        # with gzip.open(zipped_index_path) as gzip_index, open(index_path, 'wb') as f:
-        #     shutil.copyfileobj(gzip_index, f)
+    index_path_parquet = os.path.join(outputdir, 'index_' + program + '_parquet')
+    index_path_csv = os.path.join(outputdir, 'index_' + program + '.csv')
+    index_path_csv_chunks = os.path.join(outputdir, 'index_chunks_' + program)
 
+    if not os.path.isfile(Path(index_path_csv)):
+        print('Unzipping Metadata file...')
+        with gzip.open(zipped_index_path) as gzip_index, open(index_path_csv, 'wb') as f:
+            shutil.copyfileobj(gzip_index, f)
+    if not os.path.isfile(Path(index_path_csv_chunks).joinpath("index_part_00")):
+        print('Splitting Metadata file into pieces...')
+        Path(index_path_csv_chunks).mkdir(parents=True, exist_ok=True)
+        os.system(f"split -d -l 3500000 {index_path_csv} {index_path_csv_chunks}/index_part_")
+
+    if not os.path.isfile(Path(index_path_parquet).joinpath("_SUCCESS")):
+        print('creating parquet index...')
         from pyspark.sql import SparkSession
-
         paralelism = 6
         print(paralelism)
         spark = SparkSession.builder \
@@ -77,11 +83,11 @@ def download_metadata_file(url, outputdir, program, max_age=None):
             .add("BASE_URL", StringType(), True) \
 
 
-        df = spark.read.format("csv").option("header", True).schema(schema).load(zipped_index_path)
+        df = spark.read.format("csv").option("header", False).schema(schema).load(index_path_csv_chunks) # .orderBy(["MGRS_TILE"])
             # csv(zipped_index_path, header = True)
-        df.repartitionByRange(5, ["MGRS_TILE"]).write.mode('overwrite').parquet(index_path)
+        df.write.mode('overwrite').parquet(index_path_parquet)
         spark.stop()
-    return index_path
+    return index_path_parquet
 
 
 def sort_url_list(cc_values, all_acqdates, all_urls):
