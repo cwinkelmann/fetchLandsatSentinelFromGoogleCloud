@@ -83,10 +83,10 @@ def download_metadata_file(url, outputdir, program, max_age=None):
             .add("BASE_URL", StringType(), True) \
 
 
-        df = spark.read.format("csv").option("header", False).schema(schema).load(index_path_csv_chunks) # .orderBy(["MGRS_TILE"])
+        spark_df = spark.read.format("csv").option("header", False).schema(schema).load(index_path_csv_chunks) # .orderBy(["MGRS_TILE"])
             # csv(zipped_index_path, header = True)
-        df.write.mode('overwrite').parquet(index_path_parquet)
-        spark.stop()
+        spark_df.write.mode('overwrite').parquet(index_path_parquet)
+        # spark.stop()
     return index_path_parquet
 
 

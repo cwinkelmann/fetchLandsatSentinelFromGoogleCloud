@@ -300,10 +300,11 @@ def _run_fels(options):
     for scene in scenes:
 
         if options.sat == 'S2':
-            sentinel2_metadata_file = ensure_sentinel2_metadata(
-                options.outputcatalogs)
+            ## FIXME the download should take if the index is there.
+            # sentinel2_metadata_file = ensure_sentinel2_metadata(
+            #     options.outputcatalogs)
             urls_df = query_sentinel2_catalogue(
-                sentinel2_metadata_file, options.cloudcover,
+                options.outputcatalogs, options.cloudcover,
                 options.start_date, options.end_date, scene, options.latest,
                 use_csv=options.use_csv) ## TODO use_csv is not a real option
 

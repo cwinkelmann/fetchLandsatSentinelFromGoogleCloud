@@ -82,8 +82,9 @@ def query_sentinel2_catalogue(collection_file, cc_limit, date_start, date_end, t
     """
     print('Searching for Sentinel-2 images in catalog...')
     if use_csv:
-        return _query_sentinel2_with_csv(collection_file, cc_limit, date_start,
-                                         date_end, tile, latest=latest)
+        # return _query_sentinel2_with_csv(collection_file, cc_limit, date_start,
+        #                                  date_end, tile, latest=latest)
+        raise(DeprecationWarning("do not query csv files on a regular basis. This takes ages if the CSV is 5GB in size"))
     else:
         # Query the index file directly
         return _query_sentinel2_with_pyspark(collection_file, cc_limit,
