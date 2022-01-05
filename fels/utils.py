@@ -7,6 +7,7 @@ import os
 import shutil
 import sqlite3
 from pathlib import Path
+from loguru import logger
 
 import ubelt
 
@@ -46,19 +47,22 @@ def download_metadata_file(url, outputdir, program, max_age=None):
     index_path_csv_chunks = os.path.join(outputdir, 'index_chunks_' + program)
 
     if not os.path.isfile(Path(index_path_csv)):
-        print('Unzipping Metadata file...')
+
         with gzip.open(zipped_index_path) as gzip_index, open(index_path_csv, 'wb') as f:
+            logger.info(f"Unzipping Metadata file to: {gzip_index}")
             shutil.copyfileobj(gzip_index, f)
+
     if not os.path.isfile(Path(index_path_csv_chunks).joinpath("index_part_00")):
-        print('Splitting Metadata file into pieces...')
+        logger.info(f"Splitting Metadata CSV file into pieces to {index_path_csv_chunks}")
         Path(index_path_csv_chunks).mkdir(parents=True, exist_ok=True)
         os.system(f"split -d -l 3500000 {index_path_csv} {index_path_csv_chunks}/index_part_")
 
     if not os.path.isfile(Path(index_path_parquet).joinpath("_SUCCESS")):
-        print('creating parquet index...')
+        logger.info('creating parquet index using spark. see http:/localhost:4040 for the progress. After executing the spark context will be closed')
         from pyspark.sql import SparkSession
         paralelism = 6
-        print(paralelism)
+        logger.info(f"using parallelism of {paralelism}")
+
         spark = SparkSession.builder \
           .master(f"local[{paralelism}]") \
           .appName("convert to parquet") \
@@ -66,6 +70,7 @@ def download_metadata_file(url, outputdir, program, max_age=None):
 
         from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType, BooleanType, TimestampType
 
+        # setting the schema for spark to read the CSV
         schema = StructType() \
             .add("GRANULE_ID", StringType(), True) \
             .add("PRODUCT_ID", StringType(), True) \
@@ -83,10 +88,9 @@ def download_metadata_file(url, outputdir, program, max_age=None):
             .add("BASE_URL", StringType(), True) \
 
 
-        spark_df = spark.read.format("csv").option("header", False).schema(schema).load(index_path_csv_chunks) # .orderBy(["MGRS_TILE"])
-            # csv(zipped_index_path, header = True)
+        spark_df = spark.read.format("csv").option("header", False).schema(schema).load(index_path_csv_chunks)
         spark_df.write.mode('overwrite').parquet(index_path_parquet)
-        # spark.stop()
+        spark.stop()
     return index_path_parquet
 
 
