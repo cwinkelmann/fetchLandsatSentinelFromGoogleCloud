@@ -80,7 +80,7 @@ def query_sentinel2_catalogue(collection_file, cc_limit, date_start, date_end, t
         >>> print(results[-1])
         >>> print('results = {!r}'.format(len(results)))
     """
-    print('Searching for Sentinel-2 images in catalog...')
+    print(f'Searching for Sentinel-2 images in catalog for tile: {tile} and dates: {date_start} and {date_end}')
     if use_csv:
         # return _query_sentinel2_with_csv(collection_file, cc_limit, date_start,
         #                                  date_end, tile, latest=latest)
