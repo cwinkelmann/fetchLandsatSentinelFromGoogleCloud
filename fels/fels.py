@@ -316,7 +316,7 @@ def _run_fels(options):
                 if not options.list:
                     valid_mask = []
                     for index, row in urls_df.iterrows():
-                    #for i, u in enumerate(urls_df):
+
                         ok = False
                         print('Downloading {} of {}...'.format(index + 1, len(urls_df)))
                         try:

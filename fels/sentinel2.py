@@ -241,15 +241,17 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
             manifest_lines = manifest_file.read().split()
 
 
-        ## metadata = extract_granule_metadata(manifest_lines, url) ## TODO remove this later
+        metadata = filter_manifest_lines(manifest_lines, resolution=60, url=url)
 
         """
         finding all links in the MANIFEST
         """
-        for line in manifest_lines:
-            if 'href' in line:
-                rel_path = line[line.find('href=".') + 7:]
-                rel_path = rel_path[:rel_path.find('"')]
+        for rel_path in metadata:
+        #for line in manifest_lines:
+            #if 'href' in line:
+            if True:
+                # rel_path = line[line.find('href=".') + 7:]
+                # rel_path = rel_path[:rel_path.find('"')]
                 abs_path = os.path.join(target_path, *rel_path.split('/')[1:])
 
                 if not os.path.exists(os.path.dirname(abs_path)):
@@ -294,33 +296,37 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
     return return_status
 
 
-def extract_granule_metadata(manifest_lines, url):
+def filter_manifest_lines(manifest_lines, resolution, url):
     """
-    find the extend of the tile
+    reduce the filelist to Files we need
+    On Top Level we have three folders:
+    DATASTRIP
+    GRANULE
+    HTML
+
+    Files:
+    INSPIRE.xml
+    manifest.safe
+    MTD_MSIL2A.xml
+
     :param manifest_lines:
     :return:
     """
+    available_resolutions = ["R10m", "R20m", "R60m"]
+    desired_resolution = [f"R{resolution}m"]
+    resolution_blacklist = list(set(available_resolutions) - set(desired_resolution))
+
     debug_rel_paths = []
     for line in manifest_lines:
         if 'href' in line:
             rel_path = line[line.find('href=".') + 7:]
             rel_path = rel_path[:rel_path.find('"')]
-            if rel_path.split("/")[-1] == "MTD_TL.xml" and rel_path.split("/")[1] == "GRANULE":
-                ## Parse this file
 
-                granule_metadata = os.path.join("/tmp/MTD_TL.xml")
-
-                ubelt.download(url + rel_path, fpath=granule_metadata)
-                import xml.etree.ElementTree as ET
-                root = ET.parse(granule_metadata).getroot()
-
-
-                # with open(granule_metadata, 'r') as f:
-                #     data = f.read()
-                #     bs_data = BeautifulSoup(data, "xml")
-                #     b_unique = bs_data.find_all('n1:Geometric_Info')
-
-            debug_rel_paths.append(rel_path)
+            if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) > 4
+                and ( rel_path.split("/")[4] in resolution_blacklist)):
+                pass
+            else:
+                debug_rel_paths.append(rel_path)
 
     return debug_rel_paths
 
