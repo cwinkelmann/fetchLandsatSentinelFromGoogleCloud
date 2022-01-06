@@ -224,7 +224,7 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
     if not os.path.exists(target_path) or overwrite:
 
         manifest_url = url + '/manifest.safe'
-
+        ## TODO first check for the local version of this file
         if reject_old:
             # check contents of manifest before downloading the rest
             content = urlopen(manifest_url)
@@ -240,8 +240,9 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
         with open(target_manifest, 'r') as manifest_file:
             manifest_lines = manifest_file.read().split()
 
-
-        metadata = filter_manifest_lines(manifest_lines, resolution=60, url=url)
+        ## TODO get the bands from somewhere
+        bands = ["B02", "B03", "B8A"]
+        metadata = filter_manifest_lines(manifest_lines, resolution=60, bands=bands)
 
         """
         finding all links in the MANIFEST
@@ -257,6 +258,7 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
                 if not os.path.exists(os.path.dirname(abs_path)):
                     os.makedirs(os.path.dirname(abs_path))
 
+                ## TODO parallize this somehow
                 try:
                     ubelt.download(url + rel_path, fpath=abs_path)
                 except HTTPError as error:
@@ -296,7 +298,7 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
     return return_status
 
 
-def filter_manifest_lines(manifest_lines, resolution, url):
+def filter_manifest_lines(manifest_lines, resolution, bands):
     """
     reduce the filelist to Files we need
     On Top Level we have three folders:
@@ -322,9 +324,18 @@ def filter_manifest_lines(manifest_lines, resolution, url):
             rel_path = line[line.find('href=".') + 7:]
             rel_path = rel_path[:rel_path.find('"')]
 
+            # ignore every Image with the wrong resolution
             if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) > 4
                 and ( rel_path.split("/")[4] in resolution_blacklist)):
                 pass
+
+            # ignore images with the wrong band
+            elif (rel_path.startswith("/GRANULE/")
+                   and ( len(rel_path.split("/")) == 6 )
+                and ( rel_path.split("/")[5].split("_")[-2] not in bands ) ):
+
+                pass
+            # download everything else
             else:
                 debug_rel_paths.append(rel_path)
 
