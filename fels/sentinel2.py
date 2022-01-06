@@ -221,7 +221,8 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
     target_manifest = os.path.join(target_path, 'manifest.safe')
 
     return_status = True
-    if not os.path.exists(target_path) or overwrite:
+    #if not os.path.exists(target_path) or overwrite:
+    if True:
 
         manifest_url = url + '/manifest.safe'
         ## TODO first check for the local version of this file
@@ -234,14 +235,18 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
                     return False
 
         os.makedirs(target_path, exist_ok=True)
-        content = urlopen(manifest_url)
-        with open(target_manifest, 'wb') as f:
-            shutil.copyfileobj(content, f)
+        if os.path.isfile(target_manifest):
+            pass
+        else:
+            content = urlopen(manifest_url)
+            with open(target_manifest, 'wb') as f:
+                shutil.copyfileobj(content, f)
+
         with open(target_manifest, 'r') as manifest_file:
             manifest_lines = manifest_file.read().split()
 
         ## TODO get the bands from somewhere
-        bands = ["B02", "B03", "B8A"]
+        bands = ["B02", "B03", "B8A", "SCL"]
         metadata = filter_manifest_lines(manifest_lines, resolution=60, bands=bands)
 
         """
@@ -259,11 +264,12 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
                     os.makedirs(os.path.dirname(abs_path))
 
                 ## TODO parallize this somehow
-                try:
-                    ubelt.download(url + rel_path, fpath=abs_path)
-                except HTTPError as error:
-                    print('Error downloading {} [{}]'.format(url + rel_path, error))
-                    continue
+                if not os.path.isfile(abs_path):
+                    try:
+                        ubelt.download(url + rel_path, fpath=abs_path)
+                    except HTTPError as error:
+                        print('Error downloading {} [{}]'.format(url + rel_path, error))
+                        continue
 
         ## FIXME this assumes a different directory structure
         # granule = os.path.dirname(os.path.dirname(get_S2_image_bands(target_path, 'B01')))
@@ -339,7 +345,12 @@ def filter_manifest_lines(manifest_lines, resolution, bands):
             else:
                 debug_rel_paths.append(rel_path)
 
-    return debug_rel_paths
+            # find and add the SCL
+            if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) == 6
+                and ( rel_path.split("/")[4] == "R20m") and rel_path.split("/")[5].split("_")[-2] == "SCL"):
+                debug_rel_paths.append(rel_path)
+
+    return list(set(debug_rel_paths))
 
 
 def get_S2_image_bands(image_path, band):
