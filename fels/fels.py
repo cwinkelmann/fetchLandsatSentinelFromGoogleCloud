@@ -141,6 +141,7 @@ def get_parser():
     parser.add_argument('-l', '--list', help='List available download urls and exit without downloading', action='store_true', default=False)
     parser.add_argument('-d', '--dates', help='List or return dates instead of download urls', action='store_true', default=False)
     parser.add_argument('-r', '--reject_old', help='For S2, skip redundant old-format (before Nov 2016) images', action='store_true', default=False)
+    parser.add_argument('--bands', help='spectral bands comma seperated', default=('B02,B03,B04,SCL'))
     parser.add_argument('-t', '--thresh', help='Only select intersecting areas where the fraction of the tile that overlaps with the spatial region is greater than this threshol', default=0.0)
     parser.add_argument('--use_csv', action='store_true', dest='use_csv', help='use the direct csv query instead of sqlite3 (only useful if you are doing 1 query for the first time)')
     parser.add_argument('--version', action='version', version='{version}'.format(**version_info))
@@ -300,9 +301,6 @@ def _run_fels(options):
     for scene in scenes:
 
         if options.sat == 'S2':
-            ## FIXME the download should take if the index is there.
-            # sentinel2_metadata_file = ensure_sentinel2_metadata(
-            #     options.outputcatalogs)
             urls_df = query_sentinel2_catalogue(
                 options.outputcatalogs, options.cloudcover,
                 options.start_date, options.end_date, scene, options.latest,
@@ -323,13 +321,15 @@ def _run_fels(options):
                             ok = get_sentinel2_image(
                                 row["BASE_URL"], options.output, options.overwrite,
                                 options.excludepartial, options.noinspire,
-                                options.reject_old)
+                                options.reject_old, bands=options.bands)
                         except Exception as e:
                             print(e)
                         if not ok:
                             print(f'Skipped {row["BASE_URL"]}')
                         valid_mask.append(ok)
                     # urls_df = [u for u, m in zip(urls_df, valid_mask) if m]
+
+        ## TODO move this landsat into function
         else:
             landsat_metadata_file = ensure_landsat_metadata(
                 options.outputcatalogs)
