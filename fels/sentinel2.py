@@ -246,7 +246,7 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
             manifest_lines = manifest_file.read().split()
 
         ## TODO get the bands from somewhere
-        bands = ["B02", "B03", "B8A", "SCL"]
+        # bands = ["B02", "B03", "B8A", "SCL"]
         metadata = filter_manifest_lines(manifest_lines, resolution=60, bands=bands)
 
         """
@@ -333,6 +333,10 @@ def filter_manifest_lines(manifest_lines, resolution, bands):
             # ignore every Image with the wrong resolution
             if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) > 4
                 and ( rel_path.split("/")[4] in resolution_blacklist)):
+                pass
+
+            elif (rel_path.startswith("/HTML/")):
+                # we don't need this HTML folder for anything. And in the manifest are files linked which don't exists
                 pass
 
             # ignore images with the wrong band
