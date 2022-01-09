@@ -351,7 +351,7 @@ def filter_manifest_lines(manifest_lines, resolution, bands):
 
             # find and add the SCL
             if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) == 6
-                and ( rel_path.split("/")[4] == "R20m") and rel_path.split("/")[5].split("_")[-2] == "SCL"):
+                and ( rel_path.split("/")[4] == f"R{resolution}m") and rel_path.split("/")[5].split("_")[-2] == "SCL"):
                 debug_rel_paths.append(rel_path)
 
     return list(set(debug_rel_paths))
