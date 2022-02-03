@@ -201,7 +201,7 @@ def _query_sentinel2_with_pyspark(collection_file, cc_limit, date_start, date_en
 
 
 def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
-                        noinspire=False, reject_old=False, bands=None):
+                        noinspire=False, reject_old=False, bands=None, resolution= 60):
     """
     Collect the entire dir structure of the image files from the
     manifest.safe file and build the same structure in the output
@@ -247,7 +247,7 @@ def get_sentinel2_image(url, outputdir, overwrite=False, partial=False,
 
         ## TODO get the bands from somewhere
         # bands = ["B02", "B03", "B8A", "SCL"]
-        metadata = filter_manifest_lines(manifest_lines, resolution=60, bands=bands)
+        metadata = filter_manifest_lines(manifest_lines, resolution=resolution, bands=bands)
 
         """
         finding all links in the MANIFEST
@@ -352,6 +352,13 @@ def filter_manifest_lines(manifest_lines, resolution, bands):
             # find and add the SCL
             if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) == 6
                 and ( rel_path.split("/")[4] == f"R{resolution}m") and rel_path.split("/")[5].split("_")[-2] == "SCL"):
+
+
+                debug_rel_paths.append(rel_path)
+
+            # when we seek 10m resolution, we need the 20m resolution SCL file
+            if (rel_path.startswith("/GRANULE/") and len(rel_path.split("/")) == 6 and resolution == 10
+                and ( rel_path.split("/")[4] == f"R20m") and rel_path.split("/")[5].split("_")[-2] == "SCL"):
                 debug_rel_paths.append(rel_path)
 
     return list(set(debug_rel_paths))

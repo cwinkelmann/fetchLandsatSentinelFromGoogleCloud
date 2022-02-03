@@ -142,6 +142,7 @@ def get_parser():
     parser.add_argument('-d', '--dates', help='List or return dates instead of download urls', action='store_true', default=False)
     parser.add_argument('-r', '--reject_old', help='For S2, skip redundant old-format (before Nov 2016) images', action='store_true', default=False)
     parser.add_argument('--bands', help='spectral bands comma seperated', default=('B02,B03,B04,SCL'))
+    parser.add_argument('--resolution', help='resolution', default=(60))
     parser.add_argument('-t', '--thresh', help='Only select intersecting areas where the fraction of the tile that overlaps with the spatial region is greater than this threshol', default=0.0)
     parser.add_argument('--use_csv', action='store_true', dest='use_csv', help='use the direct csv query instead of sqlite3 (only useful if you are doing 1 query for the first time)')
     parser.add_argument('--version', action='version', version='{version}'.format(**version_info))
@@ -321,7 +322,7 @@ def _run_fels(options):
                             ok = get_sentinel2_image(
                                 row["BASE_URL"], options.output, options.overwrite,
                                 options.excludepartial, options.noinspire,
-                                options.reject_old, bands=options.bands)
+                                options.reject_old, bands=options.bands, resolution=options.resolution)
                         except Exception as e:
                             print(e)
                         if not ok:
