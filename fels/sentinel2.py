@@ -339,10 +339,28 @@ def filter_manifest_lines(manifest_lines, resolution, bands):
                 # we don't need this HTML folder for anything. And in the manifest are files linked which don't exists
                 pass
 
+            elif (rel_path.startswith("/DATASTRIP/")):
+                # we don't need this HTML folder for anything. And in the manifest are files linked which don't exists
+                pass
+
             # ignore images with the wrong band
             elif (rel_path.startswith("/GRANULE/")
                    and ( len(rel_path.split("/")) == 6 )
                 and ( rel_path.split("/")[5].split("_")[-2] not in bands ) ):
+
+                pass
+
+            ## Remove all /GRANULE/*/AUX_DATA
+            elif (rel_path.startswith("/GRANULE/")
+                   and ( len(rel_path.split("/")) > 3 )
+                and ( rel_path.split("/")[3]) == "AUX_DATA" ):
+
+                pass
+
+            ## Remove all /GRANULE/*/QI_DATA
+            elif (rel_path.startswith("/GRANULE/")
+                   and ( len(rel_path.split("/")) > 3 )
+                and ( rel_path.split("/")[3]) == "QI_DATA" ):
 
                 pass
             # download everything else
